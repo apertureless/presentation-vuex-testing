@@ -112,10 +112,165 @@ A complex application have different components, with child components and looks
 
 # [fit]Our Test Application
 
-(demo)
+[https://github.com/apertureless/vuex-notes-app](https://github.com/apertureless/vuex-notes-app)
+
+---
+# Testing getters
 
 ---
 
+```javascript
+// getters.js
+export const activeNote = state => state.activeNote
+```
+
+---
+
+```javascript
+// getters.spec.js
+
+describe('getters', () => {
+	// Mock state
+	const state = {
+		notes: [
+	    		{ text: 'Mock', favorite: false },
+				{ text: 'Mock2', favorite: true },
+				{ text: 'Mock3', favorite: false },
+    		],
+		activeNote: {}
+	}
+
+
+	it('notes', () => {
+		// Get results with mocked state
+		const result = getters.notes(state)
+
+		// Assign results with state
+		expect(result).to.deep.equal(state.notes)
+	})
+	
+})
+```
+
+---
+
+# Testing mutations
+
+---
+
+```javascript
+// mutations.js
+
+export const mutations = {
+	addNote (state) {
+		const newNote = {
+			text: 'Neue Notiz',
+			favorite: false
+		}
+		state.notes.push(newNote)
+		state.activeNote = newNote
+	},
+	...
+}
+```
+
+---
+
+```javascript
+// mutations.spec.js
+import { mutations } from '../../vuex/mutations'
+
+// destructure assign mutations
+const { addNote, editNote, deleteNote } = mutations
+
+describe('mutations', () => {
+	it('addNote', () => {
+		// mock state
+    	const state = { notes: [] }
+
+		// apply mutation
+		addNote(state)
+		
+		// assert result
+		expect(state.notes).to.be.an('array')
+		expect(state.notes[0].text).to.equal('Neue Notiz')
+	})
+})
+```
+
+---
+
+# Testing Actions
+
+```javascript
+// actions.js
+
+export const addNote = ({ commit }) => commit('addNote')
+export const editNote = ({ commit }, e) => commit('editNote', e.target.value)
+export const deleteNote = ({ commit }) => commit('deleteNote')
+
+```
+
+---
+
+# We need a helper function
+
+---
+
+```javascript
+
+const testAction = (action, args, state, expectedMutations, done) => {
+	let count = 0
+
+	// Mock Commit
+	const commit = (type, payload) => {
+		const mutation = expectedMutations[0]
+		expect(mutation.type).to.equal(type)
+		if (payload) {
+			expect(mutation.payload).to.deep.equal(payload)
+		}
+		count ++
+
+		if (count >= expectedMutations.length) {
+			done()
+		}
+	}
+
+	// call the action with mocked store and arguments
+	action({ commit, state }, ...args)
+
+	// check if no mutations should have been dispatched
+	if (expectedMutations.length === 0) {
+		expect(count).to.equal(0)
+		done()
+	}
+}
+```
+
+---
+
+# helper.js
+
+- Mocks a vuex commit
+- Checks the expected mutation type with the dispatched
+- Checks payload
+
+---
+
+```javascript
+// actions.spec.js
+
+describe('actions', () => {
+	it('addNote', (done) => {
+		const state = store.state
+		testAction(actions.addNote, [], state, [
+			{ type: 'addNote' }
+		], done)
+	})
+	....
+```
+
+---
 
 # Advanced Action Testing
 
